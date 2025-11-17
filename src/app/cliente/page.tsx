@@ -244,7 +244,7 @@ export default function ClientePage() {
                             </div>
                             <Button
                               onClick={() =>
-                                handleDownloadBoleto(installment.boleto_url, installment.installment_number)
+                                handleDownloadBoleto(installment.boleto_url)
                               }
                               size="sm"
                             >
