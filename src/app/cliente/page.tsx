@@ -5,12 +5,16 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import type { Client, Contract, Installment } from '@/types';
+import type { Client, Contract, Installment, Vehicle } from '@/types';
+
+interface ContractWithVehicle extends Contract {
+  vehicles?: Vehicle | null;
+}
 
 export default function ClientePage() {
   const router = useRouter();
   const [cliente, setCliente] = useState<Client | null>(null);
-  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [contracts, setContracts] = useState<ContractWithVehicle[]>([]);
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'parcelas' | 'historico' | 'dados'>('parcelas');
