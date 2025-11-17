@@ -1,0 +1,11 @@
+export const clientes = [
+  { cpf: "123.456.789-00", nome: "João Silva", parcelas: [
+      { id: 1, valor: 500, vencimento: "2025-12-10", pago: false },
+      { id: 2, valor: 500, vencimento: "2026-01-10", pago: true }
+    ] }
+];
+
+export const veiculos = [
+  { id: 1, marca: "Honda", modelo: "CB 500", ano: 2022 },
+  { id: 2, marca: "Toyota", modelo: "Corolla", ano: 2021 }
+];

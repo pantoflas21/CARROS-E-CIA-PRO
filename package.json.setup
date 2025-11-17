@@ -1,0 +1,14 @@
+{
+  "name": "seminovo-sistema",
+  "version": "1.0.0",
+  "description": "Sistema de gestão de vendas de carros e motos seminovos",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "keywords": ["seminovo", "carros", "motos", "gestão", "vendas"],
+  "author": "Seu Nome",
+  "license": "MIT"
+}
