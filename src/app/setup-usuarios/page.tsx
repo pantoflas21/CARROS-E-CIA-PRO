@@ -286,7 +286,7 @@ export default function SetupUsuariosPage() {
             <CardTitle>Credenciais de Login</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-blue-800">
                 <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-3">Admin</h3>
                 <div className="space-y-2 text-sm">
@@ -305,8 +305,8 @@ export default function SetupUsuariosPage() {
                 </div>
               </div>
 
-              <div className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-green-200 dark:border-green-800">
-                <h3 className="font-semibold text-green-900 dark:text-green-300 mb-3">Vendedor</h3>
+              <div className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-orange-200 dark:border-orange-800">
+                <h3 className="font-semibold text-orange-900 dark:text-orange-300 mb-3">Vendedor</h3>
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Email:</span>
@@ -322,6 +322,31 @@ export default function SetupUsuariosPage() {
                   </div>
                 </div>
               </div>
+
+              <div className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-green-200 dark:border-green-800">
+                <h3 className="font-semibold text-green-900 dark:text-green-300 mb-3">Cliente</h3>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">CPF:</span>
+                    <code className="block mt-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded font-mono text-gray-900 dark:text-gray-100">
+                      123.456.789-00
+                    </code>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Data Nasc.:</span>
+                    <code className="block mt-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded font-mono text-gray-900 dark:text-gray-100">
+                      01/01/1990
+                    </code>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Ou:</span>
+                    <code className="block mt-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded font-mono text-xs text-gray-900 dark:text-gray-100">
+                      CPF: 987.654.321-00<br />
+                      Data: 15/05/1985
+                    </code>
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -333,11 +358,15 @@ export default function SetupUsuariosPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-              Após executar o script, execute esta query para verificar se os usuários foram criados:
+              Após executar o script, execute estas queries para verificar se tudo foi criado:
             </p>
-            <div className="relative">
-              <pre className="bg-gray-900 dark:bg-slate-950 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm font-mono">
-                <code>{`SELECT 
+            
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Verificar Usuários (Admin/Vendedor):</p>
+                <div className="relative">
+                  <pre className="bg-gray-900 dark:bg-slate-950 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm font-mono">
+                    <code>{`SELECT 
   u.email,
   up.role,
   up.full_name,
@@ -345,11 +374,32 @@ export default function SetupUsuariosPage() {
 FROM auth.users u
 JOIN public.users_profile up ON u.id = up.auth_user_id
 WHERE u.email IN ('admin@seminovo.com', 'vendedor@seminovo.com');`}</code>
-              </pre>
+                  </pre>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Deve retornar 2 linhas (Admin e Vendedor).
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Verificar Clientes:</p>
+                <div className="relative">
+                  <pre className="bg-gray-900 dark:bg-slate-950 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm font-mono">
+                    <code>{`SELECT 
+  cpf,
+  full_name,
+  email,
+  birth_date,
+  is_active
+FROM public.clients
+WHERE cpf IN ('12345678900', '98765432100');`}</code>
+                  </pre>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Deve retornar 2 linhas (João Silva e Maria Santos).
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-              Você deve ver 2 linhas retornadas com os usuários criados.
-            </p>
           </CardContent>
         </Card>
 
