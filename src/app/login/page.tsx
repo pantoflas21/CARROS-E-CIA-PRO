@@ -327,9 +327,15 @@ function LoginForm() {
                 <AlertCircle className="h-3 w-3 mr-1" />
                 Não consegue fazer login?
               </p>
-              <p className="text-xs text-amber-800 dark:text-amber-200">
-                Você precisa criar os usuários no Supabase primeiro. Veja o arquivo <span className="font-semibold">CRIAR_USUARIOS.md</span> no projeto.
+              <p className="text-xs text-amber-800 dark:text-amber-200 mb-2">
+                Você precisa criar os usuários no Supabase primeiro.
               </p>
+              <a
+                href="/setup-usuarios"
+                className="text-xs text-amber-900 dark:text-amber-300 font-semibold hover:underline inline-flex items-center"
+              >
+                Clique aqui para ver o guia completo →
+              </a>
             </div>
           </div>
         </div>
