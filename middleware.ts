@@ -15,6 +15,14 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAdminRoute = pathname.startsWith('/admin');
   const isVendedorRoute = pathname.startsWith('/vendedor');
+  const isLoginRoute = pathname.startsWith('/login');
+  const isClienteRoute = pathname.startsWith('/cliente');
+  const isRootRoute = pathname === '/';
+
+  // Rotas públicas que sempre devem funcionar
+  if (isRootRoute || isLoginRoute || isClienteRoute) {
+    return response;
+  }
 
   // Se não há variáveis configuradas, apenas permite passar (evita erro 500)
   if (!supabaseUrl || !supabaseAnonKey) {
