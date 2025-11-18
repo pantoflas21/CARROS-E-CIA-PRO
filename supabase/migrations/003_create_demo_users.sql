@@ -1,12 +1,15 @@
 -- Script para criar usuários de demonstração
 -- Execute este script no SQL Editor do Supabase
+-- IMPORTANTE: Copie apenas o SQL abaixo, SEM os marcadores ```sql
 
--- 1. Criar usuário Admin
+-- Habilitar extensão pgcrypto (se necessário)
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Criar usuário Admin
 DO $$
 DECLARE
   admin_user_id uuid;
 BEGIN
-  -- Inserir usuário na tabela auth.users
   INSERT INTO auth.users (
     instance_id,
     id,
@@ -15,16 +18,10 @@ BEGIN
     email,
     encrypted_password,
     email_confirmed_at,
-    recovery_sent_at,
-    last_sign_in_at,
     raw_app_meta_data,
     raw_user_meta_data,
     created_at,
-    updated_at,
-    confirmation_token,
-    email_change,
-    email_change_token_new,
-    recovery_token
+    updated_at
   )
   VALUES (
     '00000000-0000-0000-0000-000000000000',
@@ -34,20 +31,13 @@ BEGIN
     'admin@seminovo.com',
     crypt('senha123', gen_salt('bf')),
     now(),
-    NULL,
-    NULL,
     '{"provider":"email","providers":["email"]}',
     '{}',
     now(),
-    now(),
-    '',
-    '',
-    '',
-    ''
+    now()
   )
   RETURNING id INTO admin_user_id;
 
-  -- Criar perfil do admin
   INSERT INTO public.users_profile (
     auth_user_id,
     role,
@@ -70,7 +60,7 @@ BEGIN
   RAISE NOTICE 'Usuário admin criado com ID: %', admin_user_id;
 END $$;
 
--- 2. Criar usuário Vendedor
+-- Criar usuário Vendedor
 DO $$
 DECLARE
   vendedor_user_id uuid;
@@ -83,16 +73,10 @@ BEGIN
     email,
     encrypted_password,
     email_confirmed_at,
-    recovery_sent_at,
-    last_sign_in_at,
     raw_app_meta_data,
     raw_user_meta_data,
     created_at,
-    updated_at,
-    confirmation_token,
-    email_change,
-    email_change_token_new,
-    recovery_token
+    updated_at
   )
   VALUES (
     '00000000-0000-0000-0000-000000000000',
@@ -102,16 +86,10 @@ BEGIN
     'vendedor@seminovo.com',
     crypt('senha123', gen_salt('bf')),
     now(),
-    NULL,
-    NULL,
     '{"provider":"email","providers":["email"]}',
     '{}',
     now(),
-    now(),
-    '',
-    '',
-    '',
-    ''
+    now()
   )
   RETURNING id INTO vendedor_user_id;
 
@@ -137,7 +115,7 @@ BEGIN
   RAISE NOTICE 'Usuário vendedor criado com ID: %', vendedor_user_id;
 END $$;
 
--- 3. Verificar usuários criados
+-- Verificar usuários criados
 SELECT 
   u.email,
   up.role,
@@ -146,4 +124,3 @@ SELECT
 FROM auth.users u
 JOIN public.users_profile up ON u.id = up.auth_user_id
 WHERE u.email IN ('admin@seminovo.com', 'vendedor@seminovo.com');
-

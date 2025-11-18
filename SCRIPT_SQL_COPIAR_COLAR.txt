@@ -1,23 +1,8 @@
-# 🔑 Como Criar Usuários no Supabase
+-- ============================================
+-- SCRIPT SQL PARA CRIAR USUÁRIOS
+-- Copie TODO este conteúdo e cole no SQL Editor do Supabase
+-- ============================================
 
-## ⚠️ IMPORTANTE: Execute este script no Supabase SQL Editor
-
-Para fazer login no sistema, você precisa criar os usuários primeiro. Siga estes passos:
-
-### 1️⃣ Acesse o Supabase SQL Editor
-
-1. Vá para https://supabase.com
-2. Acesse seu projeto
-3. Clique em **SQL Editor** no menu lateral
-4. Clique em **New query**
-
-### 2️⃣ Copie o Script SQL
-
-**IMPORTANTE:** Abra o arquivo `supabase/migrations/003_create_demo_users.sql` e copie TODO o conteúdo (começando de `-- Script para criar usuários` até o final).
-
-**OU** copie o SQL abaixo (copie APENAS o SQL, sem os marcadores ```sql):
-
-```sql
 -- Habilitar extensão pgcrypto (se necessário)
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
@@ -126,20 +111,8 @@ BEGIN
     now()
   );
 END $$;
-```
 
-### 3️⃣ Cole no SQL Editor
-
-1. Cole o SQL copiado no campo de query do SQL Editor
-2. **NÃO inclua** os marcadores ```sql ou ``` no início/fim
-3. Clique em **Run** (ou pressione F5)
-4. Aguarde a execução completar
-
-### 4️⃣ Verificar Usuários Criados
-
-Execute esta query para verificar:
-
-```sql
+-- Verificar usuários criados
 SELECT 
   u.email,
   up.role,
@@ -148,43 +121,4 @@ SELECT
 FROM auth.users u
 JOIN public.users_profile up ON u.id = up.auth_user_id
 WHERE u.email IN ('admin@seminovo.com', 'vendedor@seminovo.com');
-```
 
-Você deve ver 2 linhas retornadas com os usuários criados.
-
-### 5️⃣ Credenciais de Login
-
-Após executar o script, use estas credenciais:
-
-**Admin:**
-- Email: `admin@seminovo.com`
-- Senha: `senha123`
-
-**Vendedor:**
-- Email: `vendedor@seminovo.com`
-- Senha: `senha123`
-
-**Cliente:**
-- CPF: `123.456.789-00`
-- Data de Nascimento: `01/01/1990`
-
-### ⚠️ Problemas Comuns
-
-**Erro: "relation auth.users does not exist"**
-- Certifique-se de que executou o script `001_initial_schema.sql` primeiro
-
-**Erro: "function gen_random_uuid() does not exist"**
-- Execute: `CREATE EXTENSION IF NOT EXISTS "pgcrypto";` antes do script
-
-**Erro: "erro de sintaxe próximo a ```"**
-- Você copiou os marcadores markdown (```sql). Copie APENAS o SQL, sem os marcadores.
-
-**Login não funciona após criar usuário**
-- Verifique se o perfil foi criado corretamente
-- Verifique se `is_active = true`
-- Verifique se o email está correto (case-sensitive)
-- Tente fazer logout e login novamente
-
-### ✅ Pronto!
-
-Após executar o script com sucesso, você poderá fazer login no sistema usando as credenciais acima.
