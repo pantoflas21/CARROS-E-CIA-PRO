@@ -7,11 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Logo } from '@/components/ui/Logo';
 
 const SQL_SCRIPT = `-- ============================================
--- SCRIPT SQL PARA CRIAR USUÁRIOS NO SUPABASE
+-- SCRIPT SQL PARA CRIAR USUARIOS NO SUPABASE
 -- Copie este script e cole no SQL Editor do Supabase
 -- ============================================
 
--- Habilitar extensão pgcrypto (se necessário)
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Criar usuário Admin (apenas se não existir)

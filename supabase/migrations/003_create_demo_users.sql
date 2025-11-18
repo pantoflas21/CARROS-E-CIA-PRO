@@ -1,17 +1,15 @@
--- Script para criar usuários de demonstração
+-- Script para criar usuarios de demonstracao
 -- Execute este script no SQL Editor do Supabase
--- IMPORTANTE: Este script verifica se os usuários já existem antes de criar
+-- IMPORTANTE: Este script verifica se os usuarios ja existem antes de criar
 
--- Habilitar extensão pgcrypto (se necessário)
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Criar usuário Admin (apenas se não existir)
+-- Criar usuario Admin (apenas se nao existir)
 DO $$
 DECLARE
   admin_user_id uuid;
   admin_exists boolean;
 BEGIN
-  -- Verificar se o usuário admin já existe
   SELECT EXISTS(SELECT 1 FROM auth.users WHERE email = 'admin@seminovo.com') INTO admin_exists;
   
   IF NOT admin_exists THEN
@@ -43,7 +41,6 @@ BEGIN
     )
     RETURNING id INTO admin_user_id;
 
-    -- Criar perfil do admin
     INSERT INTO public.users_profile (
       auth_user_id,
       role,
@@ -63,19 +60,18 @@ BEGIN
       now()
     );
 
-    RAISE NOTICE 'Usuário admin criado com ID: %', admin_user_id;
+    RAISE NOTICE 'Usuario admin criado com ID: %', admin_user_id;
   ELSE
-    RAISE NOTICE 'Usuário admin já existe, pulando criação.';
+    RAISE NOTICE 'Usuario admin ja existe, pulando criacao.';
   END IF;
 END $$;
 
--- Criar usuário Vendedor (apenas se não existir)
+-- Criar usuario Vendedor (apenas se nao existir)
 DO $$
 DECLARE
   vendedor_user_id uuid;
   vendedor_exists boolean;
 BEGIN
-  -- Verificar se o usuário vendedor já existe
   SELECT EXISTS(SELECT 1 FROM auth.users WHERE email = 'vendedor@seminovo.com') INTO vendedor_exists;
   
   IF NOT vendedor_exists THEN
@@ -126,13 +122,13 @@ BEGIN
       now()
     );
 
-    RAISE NOTICE 'Usuário vendedor criado com ID: %', vendedor_user_id;
+    RAISE NOTICE 'Usuario vendedor criado com ID: %', vendedor_user_id;
   ELSE
-    RAISE NOTICE 'Usuário vendedor já existe, pulando criação.';
+    RAISE NOTICE 'Usuario vendedor ja existe, pulando criacao.';
   END IF;
 END $$;
 
--- Criar Clientes de Demonstração (apenas se não existirem)
+-- Criar Clientes de Demonstracao (apenas se nao existirem)
 INSERT INTO public.clients (
   cpf,
   full_name,
@@ -151,12 +147,12 @@ INSERT INTO public.clients (
 VALUES
   (
     '12345678900',
-    'João Silva',
+    'Joao Silva',
     'joao@email.com',
     '(11) 99999-0001',
     '1990-01-01',
     'Rua A, 123',
-    'São Paulo',
+    'Sao Paulo',
     'SP',
     '01234-567',
     'Brasileiro',
@@ -175,13 +171,13 @@ VALUES
     'RJ',
     '20000-000',
     'Brasileira',
-    'Médica',
+    'Medica',
     'Solteira',
     true
   )
 ON CONFLICT (cpf) DO NOTHING;
 
--- Verificar usuários criados
+-- Verificar usuarios criados
 SELECT 
   u.email,
   up.role,
