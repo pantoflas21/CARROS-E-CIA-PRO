@@ -355,7 +355,7 @@ export default function ClientePage() {
                                 </p>
                               </div>
                               <Button
-                                onClick={() => handleDownloadContract(contract.contract_pdf_url)}
+                                onClick={() => handleDownloadContract(contract.contract_pdf_url ?? null)}
                                 size="sm"
                               >
                                 Download PDF
