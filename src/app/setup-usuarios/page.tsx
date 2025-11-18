@@ -120,6 +120,55 @@ BEGIN
   );
 END $$;
 
+-- Criar Clientes de Demonstração
+INSERT INTO public.clients (
+  cpf,
+  full_name,
+  email,
+  phone,
+  birth_date,
+  address,
+  city,
+  state,
+  zip_code,
+  nationality,
+  profession,
+  marital_status,
+  is_active
+)
+VALUES
+  (
+    '12345678900',
+    'João Silva',
+    'joao@email.com',
+    '(11) 99999-0001',
+    '1990-01-01',
+    'Rua A, 123',
+    'São Paulo',
+    'SP',
+    '01234-567',
+    'Brasileiro',
+    'Engenheiro',
+    'Casado',
+    true
+  ),
+  (
+    '98765432100',
+    'Maria Santos',
+    'maria@email.com',
+    '(11) 99999-0002',
+    '1985-05-15',
+    'Avenida B, 456',
+    'Rio de Janeiro',
+    'RJ',
+    '20000-000',
+    'Brasileira',
+    'Médica',
+    'Solteira',
+    true
+  )
+ON CONFLICT (cpf) DO NOTHING;
+
 -- Verificar usuários criados
 SELECT 
   u.email,
@@ -128,7 +177,17 @@ SELECT
   up.is_active
 FROM auth.users u
 JOIN public.users_profile up ON u.id = up.auth_user_id
-WHERE u.email IN ('admin@seminovo.com', 'vendedor@seminovo.com');`;
+WHERE u.email IN ('admin@seminovo.com', 'vendedor@seminovo.com');
+
+-- Verificar clientes criados
+SELECT 
+  cpf,
+  full_name,
+  email,
+  birth_date,
+  is_active
+FROM public.clients
+WHERE cpf IN ('12345678900', '98765432100');`;
 
 export default function SetupUsuariosPage() {
   const [copied, setCopied] = useState(false);
