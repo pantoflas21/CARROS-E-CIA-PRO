@@ -11,11 +11,20 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+  // Proteção de rotas administrativas
+  const { pathname } = request.nextUrl;
+  const isAdminRoute = pathname.startsWith('/admin');
+  const isVendedorRoute = pathname.startsWith('/vendedor');
+
+  // Se não há variáveis configuradas, apenas permite passar (evita erro 500)
   if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.json(
-      { error: 'Configuração do servidor inválida' },
-      { status: 500 }
-    );
+    // Permite acesso apenas à rota de login se não houver configuração
+    if (isAdminRoute || isVendedorRoute) {
+      const redirectUrl = new URL('/login', request.url);
+      redirectUrl.searchParams.set('error', 'Configuração do servidor necessária');
+      return NextResponse.redirect(redirectUrl);
+    }
+    return response;
   }
 
   // Cliente Supabase para middleware
@@ -26,11 +35,6 @@ export async function middleware(request: NextRequest) {
       autoRefreshToken: false,
     },
   });
-
-  // Proteção de rotas administrativas
-  const { pathname } = request.nextUrl;
-  const isAdminRoute = pathname.startsWith('/admin');
-  const isVendedorRoute = pathname.startsWith('/vendedor');
 
   if (isAdminRoute || isVendedorRoute) {
     const {
