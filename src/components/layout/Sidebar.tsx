@@ -109,11 +109,15 @@ export function Sidebar({ items, onItemClick, onLogout, userRole, userName, user
         {/* Sidebar Header */}
         <div className={`p-6 bg-gradient-to-r ${getRoleColor()}`}>
           <div className="flex items-center space-x-3 mb-2">
-            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-              <Car className="h-6 w-6 text-white" />
+            <div className="relative w-10 h-10 flex-shrink-0">
+              <img 
+                src="/kinito-logo.svg" 
+                alt="Kinito Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
-              <h2 className="text-xl font-bold">Seminovo</h2>
+              <h2 className="text-xl font-bold text-white">Kinito</h2>
               <p className="text-xs text-white/80">{getRoleLabel()}</p>
             </div>
           </div>

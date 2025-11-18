@@ -7,8 +7,8 @@ import { AuthProvider } from '@/components/layout/AuthProvider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Seminovo - Sistema de Gestão de Vendas',
-  description: 'Sistema completo para gestão de vendas de carros e motos seminovos',
+  title: 'Kinito - Sistema de Gestão de Vendas',
+  description: 'Kinito - Movendo seu negócio. Sistema completo para gestão de vendas de carros e motos seminovos',
 };
 
 export default function RootLayout({

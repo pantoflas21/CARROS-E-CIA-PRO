@@ -20,7 +20,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'x-client-info': 'seminovo-app',
+      'x-client-info': 'kinito-app',
     },
   },
 });
