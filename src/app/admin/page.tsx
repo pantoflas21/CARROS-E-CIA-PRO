@@ -9,8 +9,8 @@ import { StatCard } from '@/components/ui/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
-import { Car, TrendingUp, DollarSign, Package, ArrowUpRight, ArrowDownRight, FileText } from 'lucide-react';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Car, TrendingUp, DollarSign, Package, FileText, Users, AlertCircle, CheckCircle2, Building2, Shield, Wallet, FileCheck } from 'lucide-react';
 import type { Vehicle, Contract, UserProfile } from '@/types';
 
 export default function AdminPage() {
@@ -24,6 +24,8 @@ export default function AdminPage() {
     soldVehicles: 0,
     availableVehicles: 0,
     totalRevenue: 0,
+    totalClients: 0,
+    activeContracts: 0,
     monthlyGrowth: 12.5,
   });
   const [loading, setLoading] = useState(true);
@@ -80,17 +82,25 @@ export default function AdminPage() {
           .select('*')
           .order('created_at', { ascending: false });
 
+        const { data: clientsData } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('is_active', true);
+
         if (vehiclesData) {
           setVehicles(vehiclesData);
           const sold = vehiclesData.filter((v) => v.status === 'sold').length;
           const available = vehiclesData.filter((v) => v.status === 'available').length;
           const revenue = contractsData?.reduce((sum, c) => sum + (c.total_amount || 0), 0) || 0;
+          const activeContracts = contractsData?.filter((c) => c.status === 'active').length || 0;
 
           setStats({
             totalVehicles: vehiclesData.length,
             soldVehicles: sold,
             availableVehicles: available,
             totalRevenue: revenue,
+            totalClients: clientsData?.length || 0,
+            activeContracts,
             monthlyGrowth: 12.5,
           });
         }
@@ -140,6 +150,57 @@ export default function AdminPage() {
 
   const COLORS = ['#3b82f6', '#10b981'];
 
+  const moduleCards = [
+    {
+      id: 'veiculos',
+      title: 'Veículos',
+      description: 'Gestão de inventário',
+      icon: Car,
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      value: `${stats.totalVehicles} veículos`,
+      status: stats.availableVehicles > 0 ? 'Ativo' : 'Atenção',
+      statusColor: stats.availableVehicles > 0 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+      onClick: () => setActiveTab('veiculos'),
+    },
+    {
+      id: 'contratos',
+      title: 'Contratos',
+      description: 'Gestão de vendas',
+      icon: FileText,
+      iconColor: 'text-purple-600 dark:text-purple-400',
+      bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+      value: `${stats.activeContracts} ativos`,
+      status: 'Estável',
+      statusColor: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+      onClick: () => setActiveTab('contratos'),
+    },
+    {
+      id: 'clientes',
+      title: 'Clientes',
+      description: 'Base de clientes',
+      icon: Users,
+      iconColor: 'text-indigo-600 dark:text-indigo-400',
+      bgColor: 'bg-indigo-50 dark:bg-indigo-900/20',
+      value: `${stats.totalClients} clientes`,
+      status: 'Ativo',
+      statusColor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+      onClick: () => setActiveTab('clientes'),
+    },
+    {
+      id: 'financeiro',
+      title: 'Financeiro',
+      description: 'Receitas e vendas',
+      icon: Wallet,
+      iconColor: 'text-green-600 dark:text-green-400',
+      bgColor: 'bg-green-50 dark:bg-green-900/20',
+      value: formatCurrency(stats.totalRevenue),
+      status: 'Estável',
+      statusColor: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+      onClick: () => {},
+    },
+  ];
+
   return (
     <DashboardLayout 
       role="admin" 
@@ -147,167 +208,218 @@ export default function AdminPage() {
       userEmail={profile?.email}
       onLogout={handleLogout}
     >
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Dashboard Administrativo
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Visão geral completa do seu negócio
-            </p>
-          </div>
+      {/* Status Banner */}
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center space-x-2 text-sm">
+          <span className="text-gray-600 dark:text-gray-400">• Sistema Kinito em funcionamento</span>
+          <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-semibold">
+            Online
+          </span>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="mb-8 flex space-x-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl w-fit">
-        {[
-          { id: 'dashboard', label: '📊 Dashboard' },
-          { id: 'veiculos', label: '🚗 Veículos' },
-          { id: 'contratos', label: '📄 Contratos' },
-          { id: 'clientes', label: '👥 Clientes' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-              activeTab === tab.id
-                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-md'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            }`}
+      {/* Header Banner */}
+      <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 text-white shadow-xl">
+        <div className="relative z-10">
+          <h1 className="text-4xl font-bold mb-2">Painel Kinito</h1>
+          <p className="text-blue-100 text-lg mb-6">Acesso rápido aos módulos do sistema</p>
+          <Button
+            onClick={() => {}}
+            className="bg-white text-blue-600 hover:bg-blue-50 font-semibold"
           >
-            {tab.label}
-          </button>
-        ))}
+            <FileCheck className="h-4 w-4 mr-2" />
+            Tutorial
+          </Button>
+        </div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
       </div>
 
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Veículos</p>
+                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.totalVehicles}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Total no inventário</p>
+              </div>
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <Car className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Contratos</p>
+                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{stats.activeContracts}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Ativos</p>
+              </div>
+              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Clientes</p>
+                <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{stats.totalClients}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Cadastrados</p>
+              </div>
+              <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                <Users className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Receita</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(stats.totalRevenue)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Total acumulado</p>
+              </div>
+              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <DollarSign className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Module Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {moduleCards.map((module) => {
+          const Icon = module.icon;
+          return (
+            <Card
+              key={module.id}
+              className="hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105"
+              onClick={module.onClick}
+            >
+              <CardContent className="p-6">
+                <div className={`w-12 h-12 ${module.bgColor} rounded-lg flex items-center justify-center mb-4`}>
+                  <Icon className={`h-6 w-6 ${module.iconColor}`} />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{module.title}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{module.description}</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white mb-3">{module.value}</p>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${module.statusColor}`}>
+                  {module.status}
+                </span>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Charts Section */}
       {activeTab === 'dashboard' && (
-        <div className="space-y-8 animate-fadeIn">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard
-              title="Total de Veículos"
-              value={stats.totalVehicles}
-              icon={Car}
-              iconColor="text-blue-600 dark:text-blue-400"
-              trend={{ value: stats.monthlyGrowth, isPositive: true }}
-            />
-            <StatCard
-              title="Disponíveis"
-              value={stats.availableVehicles}
-              icon={Package}
-              iconColor="text-green-600 dark:text-green-400"
-            />
-            <StatCard
-              title="Vendidos"
-              value={stats.soldVehicles}
-              icon={TrendingUp}
-              iconColor="text-purple-600 dark:text-purple-400"
-            />
-            <StatCard
-              title="Receita Total"
-              value={formatCurrency(stats.totalRevenue)}
-              icon={DollarSign}
-              iconColor="text-orange-600 dark:text-orange-400"
-            />
-          </div>
-
-          {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Distribuição de Veículos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={chartData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${percent ? (percent * 100).toFixed(0) : 0}%`}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Vendas Recentes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={monthlyData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
-                    <XAxis dataKey="month" className="text-gray-600 dark:text-gray-400" />
-                    <YAxis className="text-gray-600 dark:text-gray-400" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Bar dataKey="valor" fill="#3b82f6" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Contracts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardHeader>
-              <CardTitle>Últimos Contratos</CardTitle>
+              <CardTitle>Distribuição de Veículos</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {contracts.slice(0, 10).map((contract) => (
-                  <div
-                    key={contract.id}
-                    className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800 dark:to-slate-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200"
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${percent ? (percent * 100).toFixed(0) : 0}%`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                        <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">
-                          {contract.contract_number}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {formatDate(contract.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-gray-900 dark:text-white">
-                        {formatCurrency(contract.total_amount)}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {contract.num_installments} parcelas
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Vendas Recentes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
+                  <XAxis dataKey="month" className="text-gray-600 dark:text-gray-400" />
+                  <YAxis className="text-gray-600 dark:text-gray-400" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Bar dataKey="valor" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
       )}
 
+      {/* Recent Contracts */}
+      {activeTab === 'dashboard' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Últimos Contratos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {contracts.slice(0, 10).map((contract) => (
+                <div
+                  key={contract.id}
+                  className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800 dark:to-slate-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        {contract.contract_number}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {formatDate(contract.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {formatCurrency(contract.total_amount)}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {contract.num_installments} parcelas
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tabs Content */}
       {activeTab === 'veiculos' && (
         <Card>
           <CardHeader>

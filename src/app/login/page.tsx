@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/ui/Logo';
 import { formatCPF, validateCPF, validateEmail, validateBirthDate, sanitizeString } from '@/lib/utils';
 import { checkRateLimit } from '@/lib/validation';
-import { Car, User, Info, ChevronRight } from 'lucide-react';
+import { Car, User, Info, ChevronRight, AlertCircle } from 'lucide-react';
 
 function LoginForm() {
   const router = useRouter();
@@ -316,10 +316,21 @@ function LoginForm() {
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-2">💡 Credenciais de Demo:</p>
-            <p className="text-xs text-blue-800 dark:text-blue-200 font-mono">Email: admin@seminovo.com</p>
-            <p className="text-xs text-blue-800 dark:text-blue-200 font-mono">Senha: senha123</p>
+          <div className="mt-6 space-y-3">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-2">💡 Credenciais de Demo:</p>
+              <p className="text-xs text-blue-800 dark:text-blue-200 font-mono">Email: admin@seminovo.com</p>
+              <p className="text-xs text-blue-800 dark:text-blue-200 font-mono">Senha: senha123</p>
+            </div>
+            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+              <p className="text-xs font-semibold text-amber-900 dark:text-amber-300 mb-1 flex items-center">
+                <AlertCircle className="h-3 w-3 mr-1" />
+                Não consegue fazer login?
+              </p>
+              <p className="text-xs text-amber-800 dark:text-amber-200">
+                Você precisa criar os usuários no Supabase primeiro. Veja o arquivo <span className="font-semibold">CRIAR_USUARIOS.md</span> no projeto.
+              </p>
+            </div>
           </div>
         </div>
       </div>
