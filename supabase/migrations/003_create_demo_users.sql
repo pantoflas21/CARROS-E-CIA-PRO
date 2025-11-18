@@ -1,121 +1,138 @@
 -- Script para criar usuários de demonstração
 -- Execute este script no SQL Editor do Supabase
--- IMPORTANTE: Copie apenas o SQL abaixo, SEM os marcadores ```sql
+-- IMPORTANTE: Este script verifica se os usuários já existem antes de criar
 
 -- Habilitar extensão pgcrypto (se necessário)
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Criar usuário Admin
+-- Criar usuário Admin (apenas se não existir)
 DO $$
 DECLARE
   admin_user_id uuid;
+  admin_exists boolean;
 BEGIN
-  INSERT INTO auth.users (
-    instance_id,
-    id,
-    aud,
-    role,
-    email,
-    encrypted_password,
-    email_confirmed_at,
-    raw_app_meta_data,
-    raw_user_meta_data,
-    created_at,
-    updated_at
-  )
-  VALUES (
-    '00000000-0000-0000-0000-000000000000',
-    gen_random_uuid(),
-    'authenticated',
-    'authenticated',
-    'admin@seminovo.com',
-    crypt('senha123', gen_salt('bf')),
-    now(),
-    '{"provider":"email","providers":["email"]}',
-    '{}',
-    now(),
-    now()
-  )
-  RETURNING id INTO admin_user_id;
+  -- Verificar se o usuário admin já existe
+  SELECT EXISTS(SELECT 1 FROM auth.users WHERE email = 'admin@seminovo.com') INTO admin_exists;
+  
+  IF NOT admin_exists THEN
+    INSERT INTO auth.users (
+      instance_id,
+      id,
+      aud,
+      role,
+      email,
+      encrypted_password,
+      email_confirmed_at,
+      raw_app_meta_data,
+      raw_user_meta_data,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      '00000000-0000-0000-0000-000000000000',
+      gen_random_uuid(),
+      'authenticated',
+      'authenticated',
+      'admin@seminovo.com',
+      crypt('senha123', gen_salt('bf')),
+      now(),
+      '{"provider":"email","providers":["email"]}',
+      '{}',
+      now(),
+      now()
+    )
+    RETURNING id INTO admin_user_id;
 
-  INSERT INTO public.users_profile (
-    auth_user_id,
-    role,
-    full_name,
-    email,
-    is_active,
-    created_at,
-    updated_at
-  )
-  VALUES (
-    admin_user_id,
-    'admin',
-    'Administrador Kinito',
-    'admin@seminovo.com',
-    true,
-    now(),
-    now()
-  );
+    -- Criar perfil do admin
+    INSERT INTO public.users_profile (
+      auth_user_id,
+      role,
+      full_name,
+      email,
+      is_active,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      admin_user_id,
+      'admin',
+      'Administrador Kinito',
+      'admin@seminovo.com',
+      true,
+      now(),
+      now()
+    );
 
-  RAISE NOTICE 'Usuário admin criado com ID: %', admin_user_id;
+    RAISE NOTICE 'Usuário admin criado com ID: %', admin_user_id;
+  ELSE
+    RAISE NOTICE 'Usuário admin já existe, pulando criação.';
+  END IF;
 END $$;
 
--- Criar usuário Vendedor
+-- Criar usuário Vendedor (apenas se não existir)
 DO $$
 DECLARE
   vendedor_user_id uuid;
+  vendedor_exists boolean;
 BEGIN
-  INSERT INTO auth.users (
-    instance_id,
-    id,
-    aud,
-    role,
-    email,
-    encrypted_password,
-    email_confirmed_at,
-    raw_app_meta_data,
-    raw_user_meta_data,
-    created_at,
-    updated_at
-  )
-  VALUES (
-    '00000000-0000-0000-0000-000000000000',
-    gen_random_uuid(),
-    'authenticated',
-    'authenticated',
-    'vendedor@seminovo.com',
-    crypt('senha123', gen_salt('bf')),
-    now(),
-    '{"provider":"email","providers":["email"]}',
-    '{}',
-    now(),
-    now()
-  )
-  RETURNING id INTO vendedor_user_id;
+  -- Verificar se o usuário vendedor já existe
+  SELECT EXISTS(SELECT 1 FROM auth.users WHERE email = 'vendedor@seminovo.com') INTO vendedor_exists;
+  
+  IF NOT vendedor_exists THEN
+    INSERT INTO auth.users (
+      instance_id,
+      id,
+      aud,
+      role,
+      email,
+      encrypted_password,
+      email_confirmed_at,
+      raw_app_meta_data,
+      raw_user_meta_data,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      '00000000-0000-0000-0000-000000000000',
+      gen_random_uuid(),
+      'authenticated',
+      'authenticated',
+      'vendedor@seminovo.com',
+      crypt('senha123', gen_salt('bf')),
+      now(),
+      '{"provider":"email","providers":["email"]}',
+      '{}',
+      now(),
+      now()
+    )
+    RETURNING id INTO vendedor_user_id;
 
-  INSERT INTO public.users_profile (
-    auth_user_id,
-    role,
-    full_name,
-    email,
-    is_active,
-    created_at,
-    updated_at
-  )
-  VALUES (
-    vendedor_user_id,
-    'vendedor',
-    'Vendedor Kinito',
-    'vendedor@seminovo.com',
-    true,
-    now(),
-    now()
-  );
+    INSERT INTO public.users_profile (
+      auth_user_id,
+      role,
+      full_name,
+      email,
+      is_active,
+      created_at,
+      updated_at
+    )
+    VALUES (
+      vendedor_user_id,
+      'vendedor',
+      'Vendedor Kinito',
+      'vendedor@seminovo.com',
+      true,
+      now(),
+      now()
+    );
 
-  RAISE NOTICE 'Usuário vendedor criado com ID: %', vendedor_user_id;
+    RAISE NOTICE 'Usuário vendedor criado com ID: %', vendedor_user_id;
+  ELSE
+    RAISE NOTICE 'Usuário vendedor já existe, pulando criação.';
+  END IF;
 END $$;
 
--- Criar Clientes de Demonstração
+-- Criar Clientes de Demonstração (apenas se não existirem)
 INSERT INTO public.clients (
   cpf,
   full_name,

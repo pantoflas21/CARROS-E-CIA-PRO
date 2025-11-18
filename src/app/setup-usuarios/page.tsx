@@ -14,12 +14,17 @@ const SQL_SCRIPT = `-- ============================================
 -- Habilitar extensão pgcrypto (se necessário)
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Criar usuário Admin
+-- Criar usuário Admin (apenas se não existir)
 DO $$
 DECLARE
   admin_user_id uuid;
+  admin_exists boolean;
 BEGIN
-  INSERT INTO auth.users (
+  -- Verificar se o usuário admin já existe
+  SELECT EXISTS(SELECT 1 FROM auth.users WHERE email = 'admin@seminovo.com') INTO admin_exists;
+  
+  IF NOT admin_exists THEN
+    INSERT INTO auth.users (
     instance_id,
     id,
     aud,
@@ -65,14 +70,23 @@ BEGIN
     now(),
     now()
   );
+    RAISE NOTICE 'Usuário admin criado com ID: %', admin_user_id;
+  ELSE
+    RAISE NOTICE 'Usuário admin já existe, pulando criação.';
+  END IF;
 END $$;
 
--- Criar usuário Vendedor
+-- Criar usuário Vendedor (apenas se não existir)
 DO $$
 DECLARE
   vendedor_user_id uuid;
+  vendedor_exists boolean;
 BEGIN
-  INSERT INTO auth.users (
+  -- Verificar se o usuário vendedor já existe
+  SELECT EXISTS(SELECT 1 FROM auth.users WHERE email = 'vendedor@seminovo.com') INTO vendedor_exists;
+  
+  IF NOT vendedor_exists THEN
+    INSERT INTO auth.users (
     instance_id,
     id,
     aud,
@@ -118,6 +132,10 @@ BEGIN
     now(),
     now()
   );
+    RAISE NOTICE 'Usuário vendedor criado com ID: %', vendedor_user_id;
+  ELSE
+    RAISE NOTICE 'Usuário vendedor já existe, pulando criação.';
+  END IF;
 END $$;
 
 -- Criar Clientes de Demonstração
