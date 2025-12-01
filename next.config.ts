@@ -58,6 +58,15 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
+
+  // Configurações para Vercel
+  output: 'standalone',
+  
+  // Configuração de imagens
+  images: {
+    domains: [],
+    remotePatterns: [],
+  },
 };
 
 export default nextConfig;
