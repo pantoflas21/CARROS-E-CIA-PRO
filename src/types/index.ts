@@ -97,3 +97,50 @@ export interface PaymentHistory {
   notes?: string;
   created_at: string;
 }
+
+// ============================================
+// MÓDULO DE VENDAS
+// ============================================
+
+export interface SaleClient {
+  id: string;
+  nome: string;
+  cpf: string;
+  telefone: string;
+  email: string;
+  created_at: string;
+}
+
+export interface SaleVehicle {
+  id: string;
+  marca: string;
+  modelo: string;
+  ano: number;
+  placa?: string;
+  valor: number;
+  status: 'disponivel' | 'vendido';
+  created_at: string;
+  created_by?: string;
+}
+
+export interface Sale {
+  id: string;
+  client_id: string;
+  vehicle_id: string;
+  vendedor_id: string;
+  valor_venda: number;
+  comissao: number;
+  comissao_percentual: number;
+  status: 'em negociacao' | 'vendido' | 'cancelado';
+  observacoes?: string;
+  created_at: string;
+  updated_at: string;
+  // Relacionamentos (quando buscados com join)
+  client?: SaleClient;
+  vehicle?: SaleVehicle;
+  vendedor?: {
+    id: string;
+    full_name: string;
+    email: string;
+  };
+}

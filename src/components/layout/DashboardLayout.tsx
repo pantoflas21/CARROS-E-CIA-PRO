@@ -25,15 +25,15 @@ export function DashboardLayout({ children, role, userName, userEmail, onLogout 
       case 'admin':
         return [
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
-          { id: 'vehicles', label: 'Veículos', icon: Car, href: '/admin#veiculos' },
-          { id: 'contracts', label: 'Contratos', icon: FileText, href: '/admin#contratos' },
-          { id: 'clients', label: 'Clientes', icon: Users, href: '/admin#clientes' },
+          { id: 'vendas', label: 'Vendas', icon: FileText, href: '/admin/vendas' },
+          { id: 'vehicles', label: 'Veículos', icon: Car, href: '/admin/veiculos' },
+          { id: 'clients', label: 'Clientes', icon: Users, href: '/admin/clientes' },
         ];
       case 'vendedor':
         return [
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/vendedor' },
+          { id: 'vendas', label: 'Minhas Vendas', icon: FileText, href: '/vendedor/vendas' },
           { id: 'vehicles', label: 'Meus Veículos', icon: Car, href: '/vendedor#veiculos' },
-          { id: 'contracts', label: 'Meus Contratos', icon: FileText, href: '/vendedor#contratos' },
         ];
       case 'cliente':
         return [

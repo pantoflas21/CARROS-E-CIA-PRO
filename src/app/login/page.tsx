@@ -2,107 +2,29 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/ui/Logo';
-import { formatCPF, validateCPF, validateEmail, validateBirthDate, sanitizeString } from '@/lib/utils';
+import { formatCPF, validateCPF, validateBirthDate } from '@/lib/utils';
 import { checkRateLimit } from '@/lib/validation';
-import { Car, User, Info, ChevronRight, AlertCircle } from 'lucide-react';
+import { Car, User, Info, ChevronRight } from 'lucide-react';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [loginType, setLoginType] = useState<'admin-vendedor' | 'cliente' | null>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [loginType, setLoginType] = useState<'cliente' | null>(null);
   const [cpf, setCpf] = useState('');
   const [birthDate, setBirthDate] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showCredentials, setShowCredentials] = useState(false);
 
   useEffect(() => {
     const errorParam = searchParams.get('error');
-    const redirectParam = searchParams.get('redirect');
-    
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
     }
-    
-    if (redirectParam && !loginType) {
-      sessionStorage.setItem('redirectAfterLogin', redirectParam);
-    }
-  }, [searchParams, loginType]);
+  }, [searchParams]);
 
-  const handleAdminVendedorLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const sanitizedEmail = sanitizeString(email).toLowerCase();
-      const sanitizedPassword = password;
-
-      if (!validateEmail(sanitizedEmail)) {
-        throw new Error('Email inválido');
-      }
-
-      if (!checkRateLimit(`login-${sanitizedEmail}`, 5, 60000)) {
-        throw new Error('Muitas tentativas. Aguarde 1 minuto antes de tentar novamente.');
-      }
-
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: sanitizedEmail,
-        password: sanitizedPassword,
-      });
-
-      if (signInError) {
-        throw signInError;
-      }
-
-      if (!data.user) {
-        throw new Error('Falha na autenticação');
-      }
-
-      const { data: profile, error: profileError } = await supabase
-        .from('users_profile')
-        .select('role, is_active')
-        .eq('auth_user_id', data.user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        throw new Error('Erro ao verificar perfil do usuário');
-      }
-
-      if (!profile) {
-        throw new Error('Perfil não encontrado');
-      }
-
-      if (!profile.is_active) {
-        throw new Error('Conta desativada. Entre em contato com o administrador.');
-      }
-
-      const redirectPath = sessionStorage.getItem('redirectAfterLogin');
-      sessionStorage.removeItem('redirectAfterLogin');
-
-      if (profile.role === 'admin') {
-        router.push(redirectPath || '/admin');
-      } else if (profile.role === 'vendedor') {
-        router.push(redirectPath || '/vendedor');
-      } else {
-        throw new Error('Acesso negado. Você não tem permissão para acessar esta área.');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao fazer login. Verifique suas credenciais.';
-      setError(errorMessage);
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Login error:', err);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [loading, setLoading] = useState(false);
 
   const handleClienteLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,10 +32,15 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      const cleanCPF = cpf.replace(/\D/g, '');
-      const sanitizedCPF = sanitizeString(cleanCPF);
+      const { supabase, isSupabaseConfigured } = await import('@/lib/supabase');
+      
+      if (!isSupabaseConfigured()) {
+        throw new Error('Sistema não configurado. Verifique as variáveis de ambiente.');
+      }
 
-      if (!validateCPF(sanitizedCPF)) {
+      const cleanCPF = cpf.replace(/\D/g, '');
+
+      if (!validateCPF(cleanCPF)) {
         throw new Error('CPF inválido');
       }
 
@@ -121,18 +48,19 @@ function LoginForm() {
         throw new Error('Data de nascimento inválida');
       }
 
-      if (!checkRateLimit(`cliente-login-${sanitizedCPF}`, 5, 60000)) {
+      if (!checkRateLimit(`cliente-login-${cleanCPF}`, 5, 60000)) {
         throw new Error('Muitas tentativas. Aguarde 1 minuto antes de tentar novamente.');
       }
 
       const { data: cliente, error: clienteError } = await supabase
         .from('clients')
         .select('id, cpf, birth_date, is_active')
-        .eq('cpf', sanitizedCPF)
+        .eq('cpf', cleanCPF)
         .maybeSingle();
 
       if (clienteError) {
-        throw new Error('Erro ao verificar dados do cliente');
+        console.error('Cliente error:', clienteError);
+        throw new Error('Erro ao verificar dados do cliente. Tente novamente.');
       }
 
       if (!cliente) {
@@ -189,12 +117,22 @@ function LoginForm() {
 
           <div className="space-y-3">
             <button
-              onClick={() => setLoginType('admin-vendedor')}
+              onClick={() => router.push('/auth/login/admin')}
               className="w-full group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
             >
               <div className="flex items-center justify-center space-x-3">
                 <User className="h-5 w-5" />
-                <span>Administrador / Vendedor</span>
+                <span>Entrar como Administrador</span>
+                <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+            <button
+              onClick={() => router.push('/auth/login/vendedor')}
+              className="w-full group relative overflow-hidden bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+            >
+              <div className="flex items-center justify-center space-x-3">
+                <User className="h-5 w-5" />
+                <span>Entrar como Vendedor</span>
                 <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </div>
             </button>
@@ -225,9 +163,14 @@ function LoginForm() {
             {showCredentials && (
               <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg space-y-3 text-left animate-fadeIn">
                 <div>
-                  <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1">Admin/Vendedor:</p>
-                  <p className="text-sm text-blue-800 dark:text-blue-200">Email: <span className="font-mono font-semibold">admin@seminovo.com</span></p>
-                  <p className="text-sm text-blue-800 dark:text-blue-200">Senha: <span className="font-mono font-semibold">senha123</span></p>
+                  <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1">Administrador:</p>
+                  <p className="text-sm text-blue-800 dark:text-blue-200">Email: <span className="font-mono font-semibold">admin@kinito.com</span></p>
+                  <p className="text-sm text-blue-800 dark:text-blue-200">Senha: <span className="font-mono font-semibold">Admin@123</span></p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-orange-900 dark:text-orange-300 mb-1">Vendedor:</p>
+                  <p className="text-sm text-orange-800 dark:text-orange-200">Email: <span className="font-mono font-semibold">vendedor@kinito.com</span></p>
+                  <p className="text-sm text-orange-800 dark:text-orange-200">Senha: <span className="font-mono font-semibold">Vendedor@123</span></p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-green-900 dark:text-green-300 mb-1">Cliente:</p>
@@ -242,106 +185,6 @@ function LoginForm() {
     );
   }
 
-  if (loginType === 'admin-vendedor') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-        </div>
-
-        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 max-w-md w-full relative z-10 border border-white/20">
-          <button
-            onClick={() => setLoginType(null)}
-            className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-6 hover:text-gray-900 dark:hover:text-white transition-colors group"
-          >
-            <ChevronRight className="h-4 w-4 rotate-180 mr-1 group-hover:-translate-x-1 transition-transform" />
-            Voltar
-          </button>
-
-          <div className="text-center mb-6">
-            <Logo size="md" className="justify-center mb-2" />
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Login - Admin/Vendedor
-            </h2>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/30 border-2 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl mb-4 animate-slideIn">
-              <div className="flex items-center space-x-2">
-                <Info className="h-4 w-4" />
-                <span className="text-sm font-medium">{error}</span>
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={handleAdminVendedorLogin} className="space-y-5">
-            <div>
-              <label className="form-label flex items-center space-x-2">
-                <User className="h-4 w-4" />
-                <span>Email</span>
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(sanitizeString(e.target.value))}
-                className="form-input"
-                placeholder="admin@seminovo.com"
-                required
-                autoComplete="email"
-                maxLength={255}
-              />
-            </div>
-
-            <div>
-              <label className="form-label">Senha</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="form-input"
-                placeholder="••••••••"
-                required
-                autoComplete="current-password"
-                minLength={8}
-              />
-            </div>
-
-            <Button
-              type="submit"
-              isLoading={loading}
-              className="w-full text-base py-3"
-            >
-              Entrar
-            </Button>
-          </form>
-
-          <div className="mt-6 space-y-3">
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-2">💡 Credenciais de Demo:</p>
-              <p className="text-xs text-blue-800 dark:text-blue-200 font-mono">Email: admin@seminovo.com</p>
-              <p className="text-xs text-blue-800 dark:text-blue-200 font-mono">Senha: senha123</p>
-            </div>
-            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-              <p className="text-xs font-semibold text-amber-900 dark:text-amber-300 mb-1 flex items-center">
-                <AlertCircle className="h-3 w-3 mr-1" />
-                Não consegue fazer login?
-              </p>
-              <p className="text-xs text-amber-800 dark:text-amber-200 mb-2">
-                Você precisa criar os usuários no Supabase primeiro.
-              </p>
-              <a
-                href="/setup-usuarios"
-                className="text-xs text-amber-900 dark:text-amber-300 font-semibold hover:underline inline-flex items-center"
-              >
-                Clique aqui para ver o guia completo →
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 flex items-center justify-center p-4 relative overflow-hidden">

@@ -8,7 +8,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/ui/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Car, TrendingUp, DollarSign, Calendar } from 'lucide-react';
+import { Car, TrendingUp, DollarSign, Calendar, ShoppingCart } from 'lucide-react';
 import type { Vehicle, Contract, UserProfile } from '@/types';
 
 export default function VendedorPage() {
@@ -21,6 +21,7 @@ export default function VendedorPage() {
     totalVendas: 0,
     vendidosEsteMes: 0,
     comissaoMes: 0,
+    totalComissao: 0,
   });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'veiculos' | 'contratos'>('dashboard');
@@ -28,7 +29,7 @@ export default function VendedorPage() {
   useEffect(() => {
     const checkAuth = async () => {
       if (!user) {
-        router.push('/login');
+        router.push('/auth/login/vendedor');
         return;
       }
 
@@ -38,8 +39,21 @@ export default function VendedorPage() {
         .eq('auth_user_id', user.id)
         .maybeSingle();
 
-      if (!profileData || (profileData.role !== 'vendedor' && profileData.role !== 'admin') || !profileData.is_active) {
-        router.push('/login?error=' + encodeURIComponent('Acesso negado'));
+      if (!profileData) {
+        await supabase.auth.signOut();
+        router.push('/auth/login/vendedor?error=' + encodeURIComponent('Perfil não encontrado'));
+        return;
+      }
+
+      if (profileData.role !== 'vendedor') {
+        await supabase.auth.signOut();
+        router.push('/auth/login/vendedor?error=' + encodeURIComponent('Acesso negado. Esta área é exclusiva para vendedores.'));
+        return;
+      }
+
+      if (!profileData.is_active) {
+        await supabase.auth.signOut();
+        router.push('/auth/login/vendedor?error=' + encodeURIComponent('Conta desativada. Entre em contato com o administrador.'));
         return;
       }
 
@@ -78,33 +92,43 @@ export default function VendedorPage() {
           .eq('seller_id', user.id)
           .order('created_at', { ascending: false });
 
+        // Carregar vendas do vendedor
+        const { data: salesData } = await supabase
+          .from('sales')
+          .select('valor_venda, comissao, status, created_at')
+          .eq('vendedor_id', user.id)
+          .eq('status', 'vendido');
+
         if (vehiclesData) {
           setVehicles(vehiclesData);
         }
 
         if (contractsData) {
           setContracts(contractsData);
-          const currentMonth = new Date().getMonth();
-          const currentYear = new Date().getFullYear();
-
-          const vendidosEsteMes = contractsData.filter((c) => {
-            const contractDate = new Date(c.contract_date);
-            return contractDate.getMonth() === currentMonth && contractDate.getFullYear() === currentYear;
-          }).length;
-
-          const comissaoMes = contractsData
-            .filter((c) => {
-              const contractDate = new Date(c.contract_date);
-              return contractDate.getMonth() === currentMonth && contractDate.getFullYear() === currentYear;
-            })
-            .reduce((sum, c) => sum + (c.total_amount * 0.05), 0);
-
-          setStats({
-            totalVendas: contractsData.length,
-            vendidosEsteMes,
-            comissaoMes,
-          });
         }
+
+        // Calcular estatísticas de vendas
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+
+        const vendidosEsteMes = salesData?.filter((s) => {
+          const saleDate = new Date(s.created_at);
+          return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear;
+        }).length || 0;
+
+        const comissaoMes = salesData?.filter((s) => {
+          const saleDate = new Date(s.created_at);
+          return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear;
+        }).reduce((sum, s) => sum + parseFloat(String(s.comissao)), 0) || 0;
+
+        const totalComissao = salesData?.reduce((sum, s) => sum + parseFloat(String(s.comissao)), 0) || 0;
+
+        setStats({
+          totalVendas: salesData?.length || 0,
+          vendidosEsteMes,
+          comissaoMes,
+          totalComissao,
+        });
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
           console.error('Error loading data:', error);
@@ -180,7 +204,7 @@ export default function VendedorPage() {
       {activeTab === 'dashboard' && (
         <div className="space-y-8 animate-fadeIn">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
               title="Total de Vendas"
               value={stats.totalVendas}
@@ -199,6 +223,43 @@ export default function VendedorPage() {
               icon={DollarSign}
               iconColor="text-blue-600 dark:text-blue-400"
             />
+            <StatCard
+              title="Total em Comissão"
+              value={formatCurrency(stats.totalComissao)}
+              icon={DollarSign}
+              iconColor="text-green-600 dark:text-green-400"
+            />
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105" onClick={() => router.push('/vendedor/vendas')}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                    <ShoppingCart className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Minhas Vendas</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Ver todas as suas vendas</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105" onClick={() => router.push('/vendedor/vendas/nova')}>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                    <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Nova Venda</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Registrar uma nova venda</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Recent Contracts */}

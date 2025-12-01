@@ -10,8 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Car, TrendingUp, DollarSign, Package, FileText, Users, AlertCircle, CheckCircle2, Building2, Shield, Wallet, FileCheck } from 'lucide-react';
+import { Car, TrendingUp, DollarSign, Package, FileText, Users, AlertCircle, CheckCircle2, Building2, Shield, Wallet, FileCheck, ShoppingCart } from 'lucide-react';
 import type { Vehicle, Contract, UserProfile } from '@/types';
+import Link from 'next/link';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -27,6 +28,9 @@ export default function AdminPage() {
     totalClients: 0,
     activeContracts: 0,
     monthlyGrowth: 12.5,
+    totalVendas: 0,
+    totalVendido: 0,
+    totalComissoes: 0,
   });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'veiculos' | 'contratos' | 'clientes'>('dashboard');
@@ -34,7 +38,7 @@ export default function AdminPage() {
   useEffect(() => {
     const checkAuth = async () => {
       if (!user) {
-        router.push('/login');
+        router.push('/auth/login/admin');
         return;
       }
 
@@ -44,8 +48,21 @@ export default function AdminPage() {
         .eq('auth_user_id', user.id)
         .maybeSingle();
 
-      if (!profileData || profileData.role !== 'admin' || !profileData.is_active) {
-        router.push('/login?error=' + encodeURIComponent('Acesso negado'));
+      if (!profileData) {
+        await supabase.auth.signOut();
+        router.push('/auth/login/admin?error=' + encodeURIComponent('Perfil não encontrado'));
+        return;
+      }
+
+      if (profileData.role !== 'admin') {
+        await supabase.auth.signOut();
+        router.push('/auth/login/admin?error=' + encodeURIComponent('Acesso negado. Esta área é exclusiva para administradores.'));
+        return;
+      }
+
+      if (!profileData.is_active) {
+        await supabase.auth.signOut();
+        router.push('/auth/login/admin?error=' + encodeURIComponent('Conta desativada. Entre em contato com o administrador.'));
         return;
       }
 
@@ -87,21 +104,36 @@ export default function AdminPage() {
           .select('id')
           .eq('is_active', true);
 
+        // Carregar vendas
+        const { data: salesData } = await supabase
+          .from('sales')
+          .select('valor_venda, comissao, status')
+          .eq('status', 'vendido');
+
         if (vehiclesData) {
           setVehicles(vehiclesData);
-          const sold = vehiclesData.filter((v) => v.status === 'sold').length;
-          const available = vehiclesData.filter((v) => v.status === 'available').length;
+          const sold = vehiclesData.filter((v) => v.status === 'sold' || v.status === 'vendido').length;
+          const available = vehiclesData.filter((v) => v.status === 'available' || v.status === 'disponivel').length;
           const revenue = contractsData?.reduce((sum, c) => sum + (c.total_amount || 0), 0) || 0;
           const activeContracts = contractsData?.filter((c) => c.status === 'active').length || 0;
+          
+          // Calcular estatísticas de vendas
+          const totalVendas = salesData?.length || 0;
+          const totalVendido = salesData?.reduce((sum, s) => sum + parseFloat(String(s.valor_venda)), 0) || 0;
+          const totalComissoes = salesData?.reduce((sum, s) => sum + parseFloat(String(s.comissao)), 0) || 0;
 
           setStats({
             totalVehicles: vehiclesData.length,
             soldVehicles: sold,
             availableVehicles: available,
-            totalRevenue: revenue,
+            totalRevenue: revenue + totalVendido, // Incluir vendas
             totalClients: clientsData?.length || 0,
             activeContracts,
             monthlyGrowth: 12.5,
+            // Novas estatísticas de vendas
+            totalVendas,
+            totalVendido,
+            totalComissoes,
           });
         }
 
@@ -152,6 +184,18 @@ export default function AdminPage() {
 
   const moduleCards = [
     {
+      id: 'vendas',
+      title: 'Vendas',
+      description: 'Gestão de vendas',
+      icon: ShoppingCart,
+      iconColor: 'text-orange-600 dark:text-orange-400',
+      bgColor: 'bg-orange-50 dark:bg-orange-900/20',
+      value: `${stats.totalVendas} vendas`,
+      status: stats.totalVendas > 0 ? 'Ativo' : 'Sem vendas',
+      statusColor: stats.totalVendas > 0 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+      onClick: () => router.push('/admin/vendas'),
+    },
+    {
       id: 'veiculos',
       title: 'Veículos',
       description: 'Gestão de inventário',
@@ -161,19 +205,7 @@ export default function AdminPage() {
       value: `${stats.totalVehicles} veículos`,
       status: stats.availableVehicles > 0 ? 'Ativo' : 'Atenção',
       statusColor: stats.availableVehicles > 0 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-      onClick: () => setActiveTab('veiculos'),
-    },
-    {
-      id: 'contratos',
-      title: 'Contratos',
-      description: 'Gestão de vendas',
-      icon: FileText,
-      iconColor: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-50 dark:bg-purple-900/20',
-      value: `${stats.activeContracts} ativos`,
-      status: 'Estável',
-      statusColor: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-      onClick: () => setActiveTab('contratos'),
+      onClick: () => router.push('/admin/veiculos'),
     },
     {
       id: 'clientes',
@@ -185,7 +217,7 @@ export default function AdminPage() {
       value: `${stats.totalClients} clientes`,
       status: 'Ativo',
       statusColor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-      onClick: () => setActiveTab('clientes'),
+      onClick: () => router.push('/admin/clientes'),
     },
     {
       id: 'financeiro',
@@ -194,10 +226,10 @@ export default function AdminPage() {
       icon: Wallet,
       iconColor: 'text-green-600 dark:text-green-400',
       bgColor: 'bg-green-50 dark:bg-green-900/20',
-      value: formatCurrency(stats.totalRevenue),
+      value: formatCurrency(stats.totalVendido),
       status: 'Estável',
       statusColor: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-      onClick: () => {},
+      onClick: () => router.push('/admin/vendas'),
     },
   ];
 
@@ -240,57 +272,57 @@ export default function AdminPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Vendas</p>
+                <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{stats.totalVendas}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Total de vendas</p>
+              </div>
+              <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <ShoppingCart className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Vendido</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(stats.totalVendido)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Vendas concluídas</p>
+              </div>
+              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <DollarSign className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Comissões</p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(stats.totalComissoes)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Total de comissões</p>
+              </div>
+              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                <TrendingUp className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Veículos</p>
                 <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.totalVehicles}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Total no inventário</p>
               </div>
               <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <Car className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Contratos</p>
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{stats.activeContracts}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Ativos</p>
-              </div>
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Clientes</p>
-                <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{stats.totalClients}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Cadastrados</p>
-              </div>
-              <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                <Users className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Receita</p>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(stats.totalRevenue)}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Total acumulado</p>
-              </div>
-              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <DollarSign className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
             </div>
           </CardContent>

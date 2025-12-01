@@ -1,53 +1,64 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Validação de variáveis de ambiente
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Validação rigorosa de variáveis de ambiente
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
-// Cliente para uso no servidor (com validação)
-// Se as variáveis não estiverem configuradas, cria um cliente com valores vazios
-// que retornará erros, mas não quebrará a aplicação
+// Verificar se as variáveis estão configuradas
+if (!supabaseUrl || !supabaseAnonKey) {
+  if (typeof window !== 'undefined') {
+    console.error('❌ Variáveis de ambiente do Supabase não configuradas!');
+    console.error('Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY no arquivo .env.local');
+  }
+}
+
+// Validar formato da URL se estiver configurada
+if (supabaseUrl && !supabaseUrl.startsWith('http')) {
+  console.error('❌ NEXT_PUBLIC_SUPABASE_URL deve ser uma URL válida (começar com http:// ou https://)');
+}
+
+// Cliente Supabase com validação e tratamento de erros
+// Usa valores placeholder se não estiver configurado (para não quebrar a aplicação)
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-key',
   {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+  },
+  global: {
+    headers: {
+      'x-client-info': 'kinito-app',
+    },
+  },
+  db: {
+    schema: 'public',
+  },
+});
+
+// Cliente para uso no browser (com SSR)
+// Nota: Para usar SSR completo, instale @supabase/ssr e use createBrowserClient
+export function createClientBrowser() {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Variáveis de ambiente do Supabase não configuradas');
+  }
+  return createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
       flowType: 'pkce',
     },
-    global: {
-      headers: {
-        'x-client-info': 'kinito-app',
-      },
-    },
-  }
-);
-
-// Cliente para uso no browser (com SSR)
-// Nota: Para usar SSR completo, instale @supabase/ssr e use createBrowserClient
-export function createClientBrowser() {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('⚠️ Variáveis de ambiente do Supabase não configuradas. Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY no arquivo .env.local');
-  }
-  return createClient(
-    supabaseUrl || 'https://placeholder.supabase.co',
-    supabaseAnonKey || 'placeholder-key',
-    {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        flowType: 'pkce',
-      },
-    }
-  );
+  });
 }
 
 // Função auxiliar para verificar se o Supabase está configurado
 export function isSupabaseConfigured(): boolean {
-  return !!(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'https://placeholder.supabase.co');
+  return !!(supabaseUrl && supabaseAnonKey && supabaseUrl.startsWith('http'));
 }
 
 export type Database = {
